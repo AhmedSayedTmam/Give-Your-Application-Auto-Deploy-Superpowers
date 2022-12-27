@@ -212,8 +212,6 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-      - install_ansible
-      - install_awscli
       # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: [66:b8:10:6e:fe:19:bc:e8:8e:1f:6c:94:21:a6:79:07]
@@ -221,12 +219,19 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Run Configure Server Ansible play
+          name: Install dependencies
+          command: |
+            apk add curl
+            apk add --upgrade bash
+            apk add --update ansible
+            apk add openssh-client
+            pip3 install awscli
+      - run:
+          name: Configure server
           command: |
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
-            
       # Here's where you will add some code to rollback on failure 
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}     
