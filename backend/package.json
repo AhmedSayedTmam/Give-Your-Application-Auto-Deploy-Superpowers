@@ -4,6 +4,10 @@
   "description": "This is just a test.",
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/username/repository.git"
+  },
   "scripts": {
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
