@@ -27,7 +27,7 @@ commands:
           command: |
             curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
             sudo apt install -y nodejs
-
+            
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -263,8 +263,10 @@ jobs:
       # Docker image here that supports NodeJS
       - image: cimg/node:13.8.0
     steps:
+      # Checkout code from git
       - checkout
-      - install_awscli
+      # - install_awscli
+      # - install_nodejs
       
       - run:
           name: Run migrations
@@ -277,7 +279,7 @@ jobs:
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              curl https://kvdb.io/${36UFPNYMV3em9ULFLpdM6pv5}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             else
               echo "No migrations are pending" 
             fi
