@@ -58,6 +58,7 @@ commands:
     steps:
       - run:
           name: Revert migrations
+          # Add when this will run
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
@@ -73,86 +74,75 @@ commands:
 jobs:
   build-frontend:
     docker:
-      - image: cimg/node:13.8.0
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - frontend-deps-{{ checksum "frontend/package-lock.json" }}
+          keys: [frontend-build]
       - run:
-          name: Install dependencies
+          name: Build front-end
           command: |
             cd frontend
             npm install
-      - run:
-          name: Build frontend
-          command: |
-            cd frontend
             npm run build
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-deps-{{ checksum "frontend/package-lock.json" }}
+          key: frontend-build
 
   build-backend:
     docker:
-    - image: cimg/node:13.8.0
+      - image: circleci/node:13.8.0
     steps:
-    - checkout
-    - restore_cache:
-       keys:
-         - backend-deps-{{ checksum "backend/package-lock.json" }}
-    - run:
-        name: Install dependencies
-        command: |
-          cd backend
-          npm install
-    - run:
-        name: Build backend
-        command: |
-          cd backend
-          npm run build
-    - save_cache:
-        paths: [backend/node_modules]
-        key: backend-deps-{{ checksum "backend/package-lock.json" }}
+      - checkout
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: Back-end build
+          command: |
+            cd backend
+            npm install
+            npm run build
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
 
   test-frontend:
     docker:
-    - image: cimg/node:13.8.0
+      # Docker image 
+      - image: circleci/node:13.8.0
     steps:
-    - checkout
-    - restore_cache:
-       keys:
-         - frontend-deps-{{ checksum "frontend/package-lock.json" }}
-    - run:
-        name: Install dependencies
-        command: |
-          cd frontend
-          npm install
-    - run:
-        name: Run frontend unit tests
-        command: |
-          cd frontend
-          npm run test    
+      # Checkout code from git
+      - checkout
+      # Restore from cache
+      - restore_cache:
+          keys: [frontend-build]
+      # Your job code here
+      - run:
+          name: Test front-end
+          command: |
+            cd frontend
+            npm install
+            npm run test
+      
                 
   test-backend:
     docker:
-    - image: cimg/node:13.8.0
+      # Docker image here
+      - image: circleci/node:13.8.0
     steps:
-    - checkout
-    - restore_cache:
-       keys:
-         - backend-deps-{{ checksum "backend/package-lock.json" }}
-    - run:
-        name: Install dependencies
-        command: |
-          cd backend
-          npm install
-    - run:
-        name: Run backend unit tests
-        command: |
-          cd backend
-          npm run test
-                    
+      # Checkout code from git
+      - checkout
+      # Restore from cache
+      - restore_cache:
+          keys: [backend-build]
+      # Your job code here
+      - run:
+          name: Test back-end
+          command: |
+            cd backend
+            npm install
+            npm run test
+            
   scan-frontend:
     docker:
       # Docker image here
@@ -273,7 +263,7 @@ jobs:
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
-      - image: cimg/node:13.8.0
+      - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
       - checkout
