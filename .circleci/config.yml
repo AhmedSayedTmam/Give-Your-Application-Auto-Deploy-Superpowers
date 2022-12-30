@@ -20,14 +20,19 @@ commands:
             python3 -m pip install --user ansible
 
   install_nodejs:
-    description: Install Node.js 13
+    description: Install Node.js 13.8.0
     steps:
       - run:
-          name: Install Node.js 13
+          name: Install Node.js 13.8.0
           command: |
-            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            # Install Node.js LTS version as our base Node.js version
+            curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
             sudo apt install -y nodejs
-            
+
+            # Use n version manager to use Node.js v13.8.0
+            sudo npm install --global n
+            sudo n 13.8.0
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -215,14 +220,12 @@ jobs:
   deploy-infrastructure:
     docker:
       # Docker image here that supports AWS CLI
-      - image: amazon/aws-cli
+      - image: cimg/python:3.10
     steps:
       # Checkout code from git
       - checkout
-      - run:
-          name: Install tar and zip utilities
-          command: |
-            yum -y install tar gzip
+      - install_awscli
+      
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -293,7 +296,8 @@ jobs:
       # Checkout code from git
       - checkout
       - install_awscli
-      
+      - restore_cache:
+          keys: [backend-deps]
       - run:
           name: Run migrations
           command: |
