@@ -263,7 +263,7 @@ jobs:
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
-      - image: circleci/node:13.8.0
+      - image: cimg/node:13.8.0
     steps:
       # Checkout code from git
       - checkout
@@ -274,15 +274,10 @@ jobs:
           name: Run migrations
           command: |
             cd backend
-            cat .env
-            npm i
-            npm run build
-            npm run migrations > run_migrations_logs.log
-            cat run_migrations_logs.log         
-          # cd backend
-          # npm install
-          # npm run migrations > migrations_dump.txt
-          # cat migrations_dump.txt
+            npm install
+            npm audit --audit-level=critical
+            npm run migrations > migrations_dump.txt
+            cat migrations_dump.txt
       - run:
           name: Send migration results to memstash
           command: |
