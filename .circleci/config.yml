@@ -170,11 +170,16 @@ jobs:
           keys: [frontend-build]
       # Your job code here
       - run:
-          name: Scan front-end
+          name: Install dependencies
           command: |
             cd frontend
             npm install
-            npm audit fix --audit-level=critical --force
+      - run:
+          name: Scan frontend packages
+          command: |
+            cd frontend
+            npm audit fix --force --audit-level=critical
+            npm audit --audit-level=critical
       # - slack/notify:
       #     channel: $SLACK_DEFAULT_CHANNEL
       #     event: fail
@@ -191,12 +196,17 @@ jobs:
           keys: [backend-build]
       # Your job code here
       - run:
-          name: Scan back-end
+          name: Install dependencies
           command: |
             cd backend
             npm install
-            npm audit fix --audit-level=critical --force
-            npm audit fix --audit-level=critical --force
+      - run:
+          name: Scan backend packages
+          command: |
+            cd backend
+            npm audit fix --force --audit-level=critical
+            npm audit fix --force --audit-level=critical
+            npm audit --audit-level=critical
 
       # - slack/notify:
       #     channel: $SLACK_DEFAULT_CHANNEL
@@ -409,10 +419,10 @@ workflows:
           requires: [build-frontend]
       - test-backend:
           requires: [build-backend]
-      # - scan-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [build-frontend]
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
       # - deploy-infrastructure:
       #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     filters:
