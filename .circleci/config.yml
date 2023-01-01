@@ -338,26 +338,77 @@ jobs:
       - destroy-environment
       - revert-migrations   
                     
-#   deploy-backend:
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+      - image: cimg/python:3.10
+    steps:
+      # Checkout code from git
+      - checkout
+      - install_ansible
+      - install_awscli
+      - install_nodejs
+      - restore_cache:
+          keys: [backend-build]
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: ["66:b8:10:6e:fe:19:bc:e8:8e:1f:6c:94:21:a6:79:07"]
+      # attach workspace
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            cd backend
+            npm install
+      - run:
+          name: Package Backend
+          command: |
+            cd backend
+            npm run build
+            tar -czf artifact.tar.gz dist/* package*
+            cd ..
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files      
+      - run:
+          name: Deploy backend
+          command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
+
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # Here's where you will add some code to rollback on failure 
+      - destroy-environment
+      - revert-migrations 
+
+#   smoke-test:
 #     docker:
-#       # Docker image here that supports Ansible
+#       # Lightweight Docker image 
 #     steps:
 #       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
 #       - run:
 #           name: Install dependencies
 #           command: |
 #             # your code here
 #       - run:
-#           name: Deploy backend
+#           name: Get backend url
+#           command: |
+#             # your code here
+#       - run:
+#           name: Backend smoke test.
+#           command: |
+#             # your code here
+#       - run:
+#           name: Frontend smoke test.
 #           command: |
 #             # your code here
 #       # Here's where you will add some code to rollback on failure  
 
-# #   smoke-test:
+# #   cloudfront-update:
 # #     docker:
-# #       # Lightweight Docker image 
+# #       # Docker image here that supports AWS CLI
 # #     steps:
 # #       # Checkout code from git
 # #       - run:
@@ -365,52 +416,29 @@ jobs:
 # #           command: |
 # #             # your code here
 # #       - run:
-# #           name: Get backend url
-# #           command: |
-# #             # your code here
-# #       - run:
-# #           name: Backend smoke test.
-# #           command: |
-# #             # your code here
-# #       - run:
-# #           name: Frontend smoke test.
+# #           name: Update cloudfront distribution
 # #           command: |
 # #             # your code here
 # #       # Here's where you will add some code to rollback on failure  
 
-# # #   cloudfront-update:
+# # # cleanup:
 # # #     docker:
-# # #       # Docker image here that supports AWS CLI
+# # #       # Docker image here
 # # #     steps:
 # # #       # Checkout code from git
 # # #       - run:
-# # #           name: Install dependencies
+# # #           name: Get old stack workflow id
 # # #           command: |
 # # #             # your code here
+# # #             export OldWorkflowID="the id here"
+# # #             export STACKS=[] #put the list of stacks here
 # # #       - run:
-# # #           name: Update cloudfront distribution
+# # #           name: Remove old stacks and files
 # # #           command: |
-# # #             # your code here
-# # #       # Here's where you will add some code to rollback on failure  
-
-# # # # cleanup:
-# # # #     docker:
-# # # #       # Docker image here
-# # # #     steps:
-# # # #       # Checkout code from git
-# # # #       - run:
-# # # #           name: Get old stack workflow id
-# # # #           command: |
-# # # #             # your code here
-# # # #             export OldWorkflowID="the id here"
-# # # #             export STACKS=[] #put the list of stacks here
-# # # #       - run:
-# # # #           name: Remove old stacks and files
-# # # #           command: |
-# # # #             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-# # # #             then
-# # # #               # your code here
-# # # #             fi
+# # #             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+# # #             then
+# # #               # your code here
+# # #             fi
             
 
 workflows:
@@ -437,8 +465,8 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
-      # - deploy-backend:
-      #     requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
       # - smoke-test:
       #     requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
