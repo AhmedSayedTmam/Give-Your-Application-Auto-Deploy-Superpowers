@@ -424,7 +424,7 @@ jobs:
             echo ${URL}
             if curl -s $FRONTEND_WEBSITE | grep "Welcome"
             then
-              exit 1
+              exit 0
             else
               exit 1
             fi
@@ -433,39 +433,46 @@ jobs:
       - revert-migrations   
         
 
-#   cloudfront-update:
+  cloudfront-update:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: cimg/base:stable
+    steps:
+      # Checkout code from git
+      - checkout
+      - install_awscli
+      - install_nodejs
+      
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            # your code here
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name InitialStack \
+              --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
+      # Here's where you will add some code to rollback on failure
+      - destroy-environment
+
+# cleanup:
 #     docker:
-#       # Docker image here that supports AWS CLI
+#       # Docker image here
 #     steps:
 #       # Checkout code from git
 #       - run:
-#           name: Install dependencies
+#           name: Get old stack workflow id
 #           command: |
 #             # your code here
+#             export OldWorkflowID="the id here"
+#             export STACKS=[] #put the list of stacks here
 #       - run:
-#           name: Update cloudfront distribution
+#           name: Remove old stacks and files
 #           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
-
-# # cleanup:
-# #     docker:
-# #       # Docker image here
-# #     steps:
-# #       # Checkout code from git
-# #       - run:
-# #           name: Get old stack workflow id
-# #           command: |
-# #             # your code here
-# #             export OldWorkflowID="the id here"
-# #             export STACKS=[] #put the list of stacks here
-# #       - run:
-# #           name: Remove old stacks and files
-# #           command: |
-# #             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-# #             then
-# #               # your code here
-# #             fi
+#             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+#             then
+#               # your code here
+#             fi
             
 
 workflows:
