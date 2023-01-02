@@ -484,7 +484,7 @@ jobs:
                       --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
               echo Stack names: "${STACKS[@]}" 
 
-              if [[ "${OldWorkflowID}" =~ "${STACKS[@]}"  ]]
+              if [[ "${OldWorkflowID}" =~ "${STACKS[:0:7]}"  ]]
                 then
                   echo "----------------Deleted Confirmed-------------------"
                   aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
