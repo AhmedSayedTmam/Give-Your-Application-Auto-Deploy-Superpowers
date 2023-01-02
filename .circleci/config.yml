@@ -442,17 +442,16 @@ jobs:
       - checkout
       - install_awscli
       - install_nodejs
+            
       - run:
-          name: Save Old Workflow ID to kvdb.io
+          name: Update cloudfront distribution
           command: |
             export OLD_WORKFLOW_ID=$(aws cloudformation \
                       list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
                       --no-paginate --output text)
             echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
-            curl https://kvdb.io/4ow2x7yG2iuRK9Bnmawe8L/old_workflow_id -d "${OLD_WORKFLOW_ID}"
-      - run:
-          name: Update cloudfront distribution
-          command: |
+            curl https://kvdb.io/4ow2x7yG2iuRK9Bnmawe8L/old_workflow_id -d "${OLD_WORKFLOW_ID}"  
+
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --stack-name InitialStack \
@@ -492,12 +491,12 @@ jobs:
             command: |
               if [[ "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}" ]]
                 then
-                  echo "------------Deleted Confirmed-------------------"
+                  echo "----------------Deleted Confirmed-------------------"
                   aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
                   aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
                   aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
                 else
-                  echo "------------Cannot Cleanup-------------------""
+                  echo "------------------Cannot Cleanup----------------------"
                 fi
 
             
