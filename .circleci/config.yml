@@ -67,7 +67,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$(curl --insecure  https://kvdb.io/CHmuquEB77wgpq4z383x7a/migration_<< parameters.Workflow_ID >>)
+            SUCCESS=$(curl --insecure  https://kvdb.io/DFNtadaUiLiuUG9FuSab11/migration_<< parameters.Workflow_ID >>)
             if(( $SUCCESS==1 )); 
             then
               cd ~/project/backend
@@ -294,7 +294,7 @@ jobs:
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/CHmuquEB77wgpq4z383x7a/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              curl https://kvdb.io/DFNtadaUiLiuUG9FuSab11/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             else
               echo "No migrations are pending" 
             fi
@@ -449,8 +449,8 @@ jobs:
             export OLD_WORKFLOW_ID=$(aws cloudformation \
                       list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
                       --no-paginate --output text)
-            echo "Old Wokflow ID: ${OLD_WORKFLOW_ID:10:16}"
-            curl https://kvdb.io/CHmuquEB77wgpq4z383x7a/old_workflow_id -d "${OLD_WORKFLOW_ID}"  
+            echo "Old Wokflow ID: ${OLD_WORKFLOW_ID}"
+            curl https://kvdb.io/DFNtadaUiLiuUG9FuSab11/old_workflow_id -d "${OLD_WORKFLOW_ID}"  
 
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
@@ -458,7 +458,7 @@ jobs:
               --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
 
-              echo Old Wokflow ID: "${OLD_WORKFLOW_ID:10:16}"
+              echo Old Wokflow ID: "${OLD_WORKFLOW_ID}"
               echo Current Workflow ID: "${CIRCLE_WORKFLOW_ID:0:7}"
 
       # Here's where you will add some code to rollback on failure
@@ -476,11 +476,14 @@ jobs:
             name: Remove old stacks and files
             command: |
               
-              OLD_WORKFLOW_ID=$(curl --insecure  https://kvdb.io/CHmuquEB77wgpq4z383x7a/old_workflow_id)
+              OLD_WORKFLOW_ID=$(curl --insecure  https://kvdb.io/DFNtadaUiLiuUG9FuSab11/old_workflow_id)
               echo OLD_WORKFLOW_ID: "${OLD_WORKFLOW_ID:10:16}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
               STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+              echo Stack names: "${STACKS[@]}"          
+
               if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OLD_WORKFLOW_ID:10:16}" ]]
               then
                 echo "----------------Deleted Confirmed-------------------"
@@ -490,42 +493,7 @@ jobs:
               else
                 echo "------------------Cannot Cleanup----------------------"
               fi   
-      
-
-      
-        # - run:
-        #     name: save current stack workflow id
-        #     command: |
-        #       # Fetch the Current workflow ID
-        #       export CurrentWorkflowID=$(aws cloudformation \
-        #       list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-        #       --no-paginate --output text)
-        #       echo currentWorkflowID: "${CurrentWorkflowID}"
-        #       curl https://kvdb.io/CHmuquEB77wgpq4z383x7a/oldworkflowid  -d ${CurrentWorkflowID} --insecure
-
-        # - run:
-        #     name: Get old stack workflow id and remove stacks
-        #     command: |
-        #       export OldWorkflowID=$(aws cloudformation \
-        #               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-        #               --no-paginate --output text)
-        #       echo OldWorkflowID: "${OldWorkflowID}"
-        #       echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
-        #       # Fetch the stack names          
-        #       export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-        #               --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
-        #       echo Stack names: "${STACKS[@]}" 
-
-        #       if [[ "${OldWorkflowID}" != "${STACKS[@]}"  ]]
-        #         then
-        #           echo "----------------Deleted Confirmed-------------------"
-        #           aws s3 rm "s3://${OldWorkflowID}" --recursive
-        #           aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
-        #           aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
-        #         else
-        #           echo "------------------Cannot Cleanup----------------------"
-        #         fi   
-       
+    
 
 workflows:
   default:
@@ -555,7 +523,7 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
-      - cleanup:
-          requires: [cloudfront-update]
+      # - cloudfront-update:
+      #     requires: [smoke-test]
+      # - cleanup:
+      #     requires: [cloudfront-update]
